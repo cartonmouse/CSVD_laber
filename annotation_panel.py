@@ -81,21 +81,6 @@ class AnnotationPanel(QWidget):
 
         # 在第70行左右，description_input之后添加：
 
-        # 名词输入（可下拉选择或自定义）
-        noun_layout = QHBoxLayout()
-        noun_layout.addWidget(QLabel("名词:"))
-        self.noun_combo = QComboBox()
-        self.noun_combo.setEditable(True)
-        self.noun_combo.setPlaceholderText("选择或输入名词")
-        noun_layout.addWidget(self.noun_combo, 3)
-
-        self.add_noun_button = QPushButton("+ 保存")
-        self.add_noun_button.clicked.connect(self.add_custom_noun)
-        self.add_noun_button.setMaximumWidth(60)
-        noun_layout.addWidget(self.add_noun_button)
-
-        layout.addLayout(noun_layout)
-
         # 动词输入（可下拉选择或自定义）
         verb_layout = QHBoxLayout()
         verb_layout.addWidget(QLabel("动词:"))
@@ -111,7 +96,21 @@ class AnnotationPanel(QWidget):
 
         layout.addLayout(verb_layout)
 
-        layout.addLayout(verb_layout)
+        # 名词输入（可下拉选择或自定义）
+        noun_layout = QHBoxLayout()
+        noun_layout.addWidget(QLabel("名词:"))
+        self.noun_combo = QComboBox()
+        self.noun_combo.setEditable(True)
+        self.noun_combo.setPlaceholderText("选择或输入名词")
+        noun_layout.addWidget(self.noun_combo, 3)
+
+        self.add_noun_button = QPushButton("+ 保存")
+        self.add_noun_button.clicked.connect(self.add_custom_noun)
+        self.add_noun_button.setMaximumWidth(60)
+        noun_layout.addWidget(self.add_noun_button)
+
+        layout.addLayout(noun_layout)
+
 
         # 新增：标签管理按钮
         manage_layout = QHBoxLayout()
