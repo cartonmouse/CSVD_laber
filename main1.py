@@ -156,6 +156,33 @@ class MainWindow(QMainWindow):
         shortcut_focus_desc = QShortcut(QKeySequence(Qt.Key_Tab), self)
         shortcut_focus_desc.activated.connect(self.shortcut_focus_description)
 
+        # ========== 第三批新增快捷键 ==========
+        # 1-9：快速选择名词/动词（需要检查焦点）
+        for i in range(1, 10):
+            shortcut_num = QShortcut(QKeySequence(str(i)), self)
+            # 使用lambda的默认参数来捕获i的值
+            shortcut_num.activated.connect(lambda num=i: self.shortcut_quick_select(num))
+
+        # Ctrl+M：标记为非必要（全局可用）
+        shortcut_mark = QShortcut(QKeySequence('Ctrl+M'), self)
+        shortcut_mark.activated.connect(self.mark_as_unnecessary)
+
+        # F1：打开标签管理器（全局可用）
+        shortcut_tag_manager = QShortcut(QKeySequence(Qt.Key_F1), self)
+        shortcut_tag_manager.activated.connect(self.open_tag_manager)
+
+        # Home：跳到视频开头（需要检查焦点）
+        shortcut_home = QShortcut(QKeySequence(Qt.Key_Home), self)
+        shortcut_home.activated.connect(self.shortcut_seek_home)
+
+        # End：跳到视频结尾（需要检查焦点）
+        shortcut_end = QShortcut(QKeySequence(Qt.Key_End), self)
+        shortcut_end.activated.connect(self.shortcut_seek_end)
+
+        # Esc：取消操作/关闭对话框（全局可用）
+        shortcut_esc = QShortcut(QKeySequence(Qt.Key_Escape), self)
+        shortcut_esc.activated.connect(self.shortcut_escape)
+
     def set_start_time_from_player(self):
         """从当前播放位置设置开始时间"""
         current_time = self.video_player.get_current_time()
@@ -343,6 +370,34 @@ class MainWindow(QMainWindow):
 
         return f"{format_time(start)} - {format_time(end)}"
 
+    def shortcut_quick_select(self, num: int):
+        """快捷键：快速选择第num个标签（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.annotation_panel.quick_select_tag(num)
+
+    def shortcut_seek_home(self):
+        """快捷键：跳到视频开头（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.video_player.seek_to_time(0)
+
+    def shortcut_seek_end(self):
+        """快捷键：跳到视频结尾（检查焦点）"""
+        if not self.is_text_input_focused():
+            duration = self.video_player.duration
+            self.video_player.seek_to_time(duration)
+
+    def shortcut_escape(self):
+        """快捷键：Esc取消操作"""
+        # 如果有焦点在输入框，清除焦点
+        focused = QApplication.focusWidget()
+        if focused:
+            focused.clearFocus()
+
+    def open_tag_manager(self):
+        """打开标签管理器"""
+        self.annotation_panel.open_tag_manager()
+
+
     def create_toolbar(self) -> QGroupBox:
         """创建顶部工具栏"""
         group = QGroupBox("视频导航与控制")
@@ -445,6 +500,15 @@ class MainWindow(QMainWindow):
         self.progress_bar.setMaximumHeight(20)  # 新增：限制高度
         self.progress_bar.setMaximumWidth(200)  # 新增：限制宽度
         layout.addWidget(self.progress_bar)
+
+        # 添加快捷键提示
+        layout.addStretch()
+        shortcut_hint = QLabel(
+            "快捷键: Space播放 Q开始 E结束 A添加 D删除 ←→移动 Ctrl+N下一个未标注"
+        )
+        shortcut_hint.setFont(QFont("Arial", 8))
+        shortcut_hint.setStyleSheet("color: #666;")
+        layout.addWidget(shortcut_hint)
 
         widget.setLayout(layout)
         return widget

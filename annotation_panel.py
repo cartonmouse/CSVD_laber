@@ -497,3 +497,23 @@ class AnnotationPanel(QWidget):
     def focus_description_input(self):
         """将焦点设置到描述输入框"""
         self.description_input.setFocus()
+
+    def quick_select_tag(self, num: int):
+        """
+        快速选择第num个标签
+        num为1-9，对应名词或动词列表的前9个
+        逻辑：
+        - 如果名词未选择，选择第num个名词
+        - 如果名词已选择，选择第num个动词
+        """
+        # 检查名词是否已选择
+        current_noun = self.noun_combo.currentText().strip()
+
+        if not current_noun:
+            # 名词未选择，选择名词
+            if num <= len(self.noun_list):
+                self.noun_combo.setCurrentIndex(num - 1)
+        else:
+            # 名词已选择，选择动词
+            if num <= len(self.verb_list):
+                self.verb_combo.setCurrentIndex(num - 1)
