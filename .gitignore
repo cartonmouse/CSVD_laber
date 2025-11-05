@@ -1,0 +1,34 @@
+# ===== Python 缓存与临时文件 =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+*.tmp
+
+# ===== 虚拟环境 =====
+venv/
+env/
+
+# ===== IDE / 编辑器文件 =====
+.idea/
+.vscode/
+*.swp
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+
+# ===== 临时数据与测试输出 =====
+*.bak
+*.old
+*.temp
+*.txt~
+*.json~
+test_*.json
+output/
+cache/
+
+# ===== PowerShell 或错误残留文件 =====
+slbackend=schannel
+s
+*PS D*
