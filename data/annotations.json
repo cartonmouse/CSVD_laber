@@ -1,0 +1,150 @@
+{
+  "total_videos": 4,
+  "export_time": "2025-10-09T18:45:31.531634",
+  "annotations": [
+    {
+      "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250816_113900\\PU_20005657_0_20250816_113900_seg_000.mp4",
+      "video_name": "PU_20005657_0_20250816_113900_seg_000.mp4",
+      "duration": 12.003655092208009,
+      "segments": [
+        {
+          "start_time": 3.4050000000000002,
+          "end_time": 4.818,
+          "description": "",
+          "noun": "风扇",
+          "verb": "安装",
+          "tags": []
+        },
+        {
+          "start_time": 4.901,
+          "end_time": 9.553,
+          "description": "s",
+          "noun": "水瓶",
+          "verb": "拿起",
+          "tags": []
+        },
+        {
+          "start_time": 7.102,
+          "end_time": 10.674,
+          "description": "",
+          "noun": "水瓶",
+          "verb": "拿起",
+          "tags": []
+        }
+      ],
+      "annotated": true,
+      "annotator": "",
+      "timestamp": "2025-10-09T18:45:16.908338"
+    },
+    {
+      "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250817_110352\\PU_20005657_0_20250817_110352_seg_000.mp4",
+      "video_name": "PU_20005657_0_20250817_110352_seg_000.mp4",
+      "duration": 11.587195731910636,
+      "segments": [
+        {
+          "start_time": 0.0,
+          "end_time": 11.087,
+          "description": "",
+          "noun": "电焊",
+          "verb": "焊接",
+          "tags": []
+        }
+      ],
+      "annotated": true,
+      "annotator": "",
+      "timestamp": "2025-10-09T13:33:41.346903"
+    },
+    {
+      "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250819_163942\\PU_20005657_0_20250819_163942_seg_017.mp4",
+      "video_name": "PU_20005657_0_20250819_163942_seg_017.mp4",
+      "duration": 13.040579951670695,
+      "segments": [
+        {
+          "start_time": 1.124,
+          "end_time": 11.415,
+          "description": "",
+          "noun": "太阳能板",
+          "verb": "搬运",
+          "tags": []
+        }
+      ],
+      "annotated": true,
+      "annotator": "",
+      "timestamp": "2025-10-09T13:35:01.169767"
+    },
+    {
+      "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250819_163942\\PU_20005657_0_20250819_163942_seg_029.mp4",
+      "video_name": "PU_20005657_0_20250819_163942_seg_029.mp4",
+      "duration": 12.082326472793934,
+      "segments": [
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "驾驶",
+          "verb": "叉车",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        },
+        {
+          "start_time": 0.374,
+          "end_time": 11.249,
+          "description": "",
+          "noun": "",
+          "verb": "",
+          "tags": []
+        }
+      ],
+      "annotated": true,
+      "annotator": "",
+      "timestamp": "2025-10-09T13:35:56.105432"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250819_163942\\PU_20005657_0_20250819_163942_seg_029.mp4",
+  "video_name": "PU_20005657_0_20250819_163942_seg_029.mp4",
+  "duration": 12.082326472793934,
+  "segments": [
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "驾驶",
+      "verb": "叉车",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    },
+    {
+      "start_time": 0.374,
+      "end_time": 11.249,
+      "description": "",
+      "noun": "",
+      "verb": "",
+      "tags": []
+    }
+  ],
+  "annotated": true,
+  "annotator": "",
+  "timestamp": "2025-10-09T13:35:56.105432"
+}

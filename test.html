@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建筑工地视频标注工具 v1.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+
+        .video-section {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .controls {
+            background: #222;
+            padding: 15px;
+            color: white;
+        }
+
+        .time-display {
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .timeline {
+            position: relative;
+            height: 60px;
+            background: #333;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            cursor: crosshair;
+        }
+
+        .segment {
+            position: absolute;
+            height: 100%;
+            background: rgba(76, 175, 80, 0.5);
+            border: 2px solid #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        .segment.active {
+            background: rgba(76, 175, 80, 0.8);
+            border-color: #66BB6A;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .annotation-panel {
+            border-left: 1px solid #ddd;
+            padding-left: 20px;
+        }
+
+        .file-upload {
+            border: 2px dashed #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            background: #f1f8f4;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .segments-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .segment-item {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .segment-item.active {
+            background: #e8f5e9;
+        }
+
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .segment-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .action-colors {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .stats {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert-info {
+            background: #E3F2FD;
+            color: #1976D2;
+            border-left: 4px solid #2196F3;
+        }
+
+        .alert-warning {
+            background: #FFF3E0;
+            color: #E65100;
+            border-left: 4px solid #FF9800;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>🎬 建筑工地视频标注工具 v1.0</h1>
+            </div>
+
+            <div v-if="!currentVideo" class="file-upload" @click="$refs.fileInput.click()">
+                <input type="file" ref="fileInput" @change="loadVideo" accept="video/*">
+                <p style="font-size: 18px; margin-bottom: 10px;">📹 点击选择视频文件</p>
+                <p style="color: #666;">支持 MP4, AVI, MOV 等格式</p>
+            </div>
+
+            <div v-else class="main-content">
+                <div class="video-section">
+                    <video ref="videoPlayer" :src="currentVideo" @loadedmetadata="onVideoLoaded" @timeupdate="updateTime"></video>
+
+                    <div class="controls">
+                        <div class="time-display">
+                            {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+                        </div>
+
+                        <div class="timeline" @click="seekVideo">
+                            <div v-for="(seg, idx) in segments" :key="idx"
+                                 class="segment"
+                                 :class="{active: activeSegmentIndex === idx}"
+                                 :style="{left: (seg.start/duration*100)+'%', width: ((seg.end-seg.start)/duration*100)+'%'}"
+                                 @click.stop="editSegment(idx)">
+                                {{ seg.action_cn }}
+                            </div>
+                        </div>
+
+                        <div class="control-buttons">
+                            <button @click="togglePlay" class="btn-primary">
+                                {{ isPlaying ? '⏸ 暂停' : '▶ 播放' }}
+                            </button>
+                            <button @click="setStart" class="btn-primary">📍 设置起点</button>
+                            <button @click="setEnd" class="btn-primary">📍 设置终点</button>
+                            <button @click="saveSegment" class="btn-primary" :disabled="!canSaveSegment">💾 保存片段</button>
+                            <button @click="clearCurrent" class="btn-secondary">🔄 清除当前</button>
+                            <button @click="changeVideo" class="btn-secondary">📂 更换视频</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="annotation-panel">
+                    <div v-if="tempStart !== null && tempEnd === null" class="alert alert-info">
+                        ✓ 起点已设置：{{ formatTime(tempStart) }}<br>
+                        请设置终点
+                    </div>
+
+                    <div v-if="tempStart !== null && tempEnd !== null" class="alert alert-warning">
+                        当前片段：{{ formatTime(tempStart) }} - {{ formatTime(tempEnd) }}<br>
+                        请选择动作类型并添加描述
+                    </div>
+
+                    <div class="form-group">
+                        <label>动作类型</label>
+                        <select v-model="currentAction">
+                            <option value="">请选择...</option>
+                            <option value="moving">移动行走</option>
+                            <option value="operating_equipment">操作设备</option>
+                            <option value="carrying_objects">搬运物品</option>
+                            <option value="inspecting">检查观察</option>
+                            <option value="unsafe_behavior">危险行为</option>
+                            <option value="waiting">静止等待</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>动作描述 (10-30字)</label>
+                        <textarea v-model="currentDescription" placeholder="请描述工人在做什么..."></textarea>
+                    </div>
+
+                    <div class="stats">
+                        <strong>当前视频：</strong>{{ videoName }}<br>
+                        <strong>已标注片段：</strong>{{ segments.length }} 个<br>
+                        <strong>标注覆盖率：</strong>{{ coverage }}%
+                    </div>
+
+                    <div class="segments-list">
+                        <h3 style="margin-bottom: 10px;">标注列表</h3>
+                        <div v-for="(seg, idx) in segments" :key="idx"
+                             class="segment-item"
+                             :class="{active: activeSegmentIndex === idx}"
+                             @click="editSegment(idx)">
+                            <div class="segment-header">
+                                <strong>{{ seg.action_cn }}</strong>
+                                <button @click.stop="deleteSegment(idx)" class="btn-danger" style="padding: 4px 8px; font-size: 12px;">删除</button>
+                            </div>
+                            <div class="segment-info">
+                                ⏱ {{ formatTime(seg.start) }} - {{ formatTime(seg.end) }} ({{ (seg.end - seg.start).toFixed(1) }}s)
+                            </div>
+                            <div style="margin-top: 5px; font-size: 13px;">
+                                {{ seg.description }}
+                            </div>
+                        </div>
+                        <div v-if="segments.length === 0" style="text-align: center; color: #999; padding: 20px;">
+                            暂无标注片段
+                        </div>
+                    </div>
+
+                    <div class="export-section">
+                        <button @click="exportJSON" class="btn-primary" style="width: 100%;">
+                            📥 导出标注数据 (JSON)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentVideo: null,
+                    videoName: '',
+                    duration: 0,
+                    currentTime: 0,
+                    isPlaying: false,
+
+                    tempStart: null,
+                    tempEnd: null,
+                    currentAction: '',
+                    currentDescription: '',
+
+                    segments: [],
+                    activeSegmentIndex: null,
+
+                    actionMapping: {
+                        'moving': '移动行走',
+                        'operating_equipment': '操作设备',
+                        'carrying_objects': '搬运物品',
+                        'inspecting': '检查观察',
+                        'unsafe_behavior': '危险行为',
+                        'waiting': '静止等待'
+                    }
+                }
+            },
+            computed: {
+                canSaveSegment() {
+                    return this.tempStart !== null &&
+                           this.tempEnd !== null &&
+                           this.currentAction &&
+                           this.currentDescription.trim().length >= 5;
+                },
+                coverage() {
+                    if (this.duration === 0) return 0;
+                    const total = this.segments.reduce((sum, seg) => sum + (seg.end - seg.start), 0);
+                    return ((total / this.duration) * 100).toFixed(1);
+                }
+            },
+            methods: {
+                loadVideo(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.currentVideo = URL.createObjectURL(file);
+                        this.videoName = file.name;
+                        this.segments = [];
+                        this.resetCurrent();
+                    }
+                },
+
+                changeVideo() {
+                    if (confirm('确定要更换视频吗？当前标注将丢失！')) {
+                        this.currentVideo = null;
+                        this.segments = [];
+                        this.resetCurrent();
+                    }
+                },
+
+                onVideoLoaded() {
+                    this.duration = this.$refs.videoPlayer.duration;
+                },
+
+                updateTime() {
+                    this.currentTime = this.$refs.videoPlayer.currentTime;
+                },
+
+                togglePlay() {
+                    if (this.isPlaying) {
+                        this.$refs.videoPlayer.pause();
+                    } else {
+                        this.$refs.videoPlayer.play();
+                    }
+                    this.isPlaying = !this.isPlaying;
+                },
+
+                seekVideo(event) {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const percentage = x / rect.width;
+                    this.$refs.videoPlayer.currentTime = percentage * this.duration;
+                },
+
+                setStart() {
+                    this.tempStart = this.currentTime;
+                    this.tempEnd = null;
+                    this.activeSegmentIndex = null;
+                },
+
+                setEnd() {
+                    if (this.tempStart === null) {
+                        alert('请先设置起点！');
+                        return;
+                    }
+                    if (this.currentTime <= this.tempStart) {
+                        alert('终点必须大于起点！');
+                        return;
+                    }
+                    this.tempEnd = this.currentTime;
+                },
+
+                saveSegment() {
+                    const segment = {
+                        start: this.tempStart,
+                        end: this.tempEnd,
+                        action: this.currentAction,
+                        action_cn: this.actionMapping[this.currentAction],
+                        description: this.currentDescription.trim(),
+                        duration: this.tempEnd - this.tempStart
+                    };
+
+                    if (this.activeSegmentIndex !== null) {
+                        this.segments[this.activeSegmentIndex] = segment;
+                    } else {
+                        this.segments.push(segment);
+                    }
+
+                    this.segments.sort((a, b) => a.start - b.start);
+                    this.resetCurrent();
+                },
+
+                editSegment(index) {
+                    const seg = this.segments[index];
+                    this.tempStart = seg.start;
+                    this.tempEnd = seg.end;
+                    this.currentAction = seg.action;
+                    this.currentDescription = seg.description;
+                    this.activeSegmentIndex = index;
+                    this.$refs.videoPlayer.currentTime = seg.start;
+                },
+
+                deleteSegment(index) {
+                    if (confirm('确定要删除这个片段吗？')) {
+                        this.segments.splice(index, 1);
+                        this.resetCurrent();
+                    }
+                },
+
+                clearCurrent() {
+                    this.resetCurrent();
+                },
+
+                resetCurrent() {
+                    this.tempStart = null;
+                    this.tempEnd = null;
+                    this.currentAction = '';
+                    this.currentDescription = '';
+                    this.activeSegmentIndex = null;
+                },
+
+                formatTime(seconds) {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                },
+
+                exportJSON() {
+                    const data = {
+                        video_id: this.videoName.replace(/\.[^/.]+$/, ''),
+                        file_name: this.videoName,
+                        duration: this.duration,
+                        segments: this.segments,
+                        metadata: {
+                            annotated_at: new Date().toISOString(),
+                            coverage: this.coverage
+                        }
+                    };
+
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${data.video_id}_annotation.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

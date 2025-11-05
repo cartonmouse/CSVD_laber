@@ -1,0 +1,18 @@
+{
+  "video_path": "D:\\3BUPT\\Agent\\CSA\\v3muti\\src\\Label_Studio\\data\\videos\\PU_20005657_0_20250819_163942\\PU_20005657_0_20250819_163942_seg_017.mp4",
+  "video_name": "PU_20005657_0_20250819_163942_seg_017.mp4",
+  "duration": 13.040579951670695,
+  "segments": [
+    {
+      "start_time": 1.124,
+      "end_time": 11.415,
+      "description": "",
+      "noun": "太阳能板",
+      "verb": "搬运",
+      "tags": []
+    }
+  ],
+  "annotated": true,
+  "annotator": "",
+  "timestamp": "2025-10-09T13:35:01.169767"
+}
