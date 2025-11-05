@@ -26,7 +26,8 @@ class MainWindow(QMainWindow):
         self.current_video_index = 0
         self.current_annotation = None
         self.current_annotation = None
-        self.current_status_filter = "全部"  # 新增：当前状态过滤
+        self.current_status_filter = "全部"
+        self.filtered_video_indices = []  # 新增：筛选后的视频索引映射
 
         init_directories()
 
@@ -178,6 +179,15 @@ class MainWindow(QMainWindow):
         )
         layout.addWidget(self.switch_folder_button)
 
+        # 新增：标记为非必要按钮
+        self.mark_unnecessary_button = QPushButton("⚪ 非必要")
+        self.mark_unnecessary_button.setMaximumWidth(80)
+        self.mark_unnecessary_button.clicked.connect(self.mark_as_unnecessary)
+        self.mark_unnecessary_button.setStyleSheet(
+            "QPushButton { background-color: #757575; color: white; padding: 5px; }"
+        )
+        layout.addWidget(self.mark_unnecessary_button)
+
         group.setLayout(layout)
         return group
 
@@ -218,6 +228,7 @@ class MainWindow(QMainWindow):
         """更新视频选择下拉框（支持状态筛选）"""
         self.video_selector.blockSignals(True)
         self.video_selector.clear()
+        self.filtered_video_indices = []  # 清空筛选索引
 
         status_filter = self.current_status_filter
 
@@ -233,10 +244,15 @@ class MainWindow(QMainWindow):
             # 根据状态添加图标
             icon = {"未标注": "⭕", "已标注": "✅", "非必要": "⚪"}.get(status, "⭕")
             self.video_selector.addItem(f"{i + 1}. {icon} {display_name}")
+            self.filtered_video_indices.append(i)  # 记录真实索引
 
-        # 注意：筛选后不能简单用 setCurrentIndex
-        # 需要重新实现视频索引映射
-        self.video_selector.setCurrentIndex(0)
+        # 如果当前视频在筛选结果中，选中它
+        if self.filtered_video_indices and self.current_video_index in self.filtered_video_indices:
+            display_index = self.filtered_video_indices.index(self.current_video_index)
+            self.video_selector.setCurrentIndex(display_index)
+        elif self.filtered_video_indices:
+            self.video_selector.setCurrentIndex(0)
+
         self.video_selector.blockSignals(False)
 
     def update_status_bar(self):
@@ -290,14 +306,16 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowTitle(f"建筑工地视频标注工具 - {display_name}")
 
-
     def on_video_changed(self, index: int):
         """视频选择改变"""
-        if index >= 0 and index != self.current_video_index:
-            # 保存当前标注
-            self.save_annotation(silent=True)
-            # 加载新视频
-            self.load_video(index)
+        # 从筛选索引映射获取真实索引
+        if index >= 0 and index < len(self.filtered_video_indices):
+            real_index = self.filtered_video_indices[index]
+            if real_index != self.current_video_index:
+                # 保存当前标注
+                self.save_annotation(silent=True)
+                # 加载新视频
+                self.load_video(real_index)
 
     def prev_video(self):
         """上一个视频"""
@@ -522,6 +540,49 @@ class MainWindow(QMainWindow):
         """状态筛选改变"""
         self.current_status_filter = status
         self.update_video_selector()
+
+        # 如果筛选后没有视频，加载第一个（如果有的话）
+        if self.filtered_video_indices:
+            if self.current_video_index not in self.filtered_video_indices:
+                # 当前视频不在筛选结果中，加载筛选后的第一个
+                first_filtered_index = self.filtered_video_indices[0]
+                self.load_video(first_filtered_index)
+
+    def mark_as_unnecessary(self):
+        """标记当前视频为非必要"""
+        if self.data_manager.get_video_count() == 0:
+            return
+
+        video_path = self.data_manager.get_video_path(self.current_video_index)
+        if not video_path:
+            return
+
+        current_status = self.data_manager.get_video_status(video_path)
+
+        # 如果已经是非必要，则恢复为未标注
+        if current_status == "非必要":
+            reply = QMessageBox.question(
+                self, "确认恢复",
+                "当前视频已标记为【非必要】\n是否恢复为【未标注】？",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                if self.data_manager.set_video_status(video_path, "未标注"):
+                    QMessageBox.information(self, "成功", "已恢复为未标注")
+                    self.update_video_selector()
+                    self.update_status_bar()
+        else:
+            # 标记为非必要
+            reply = QMessageBox.question(
+                self, "确认标记",
+                "确定将当前视频标记为【非必要】吗？\n标记后该视频将在导出时被排除。",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                if self.data_manager.set_video_status(video_path, "非必要"):
+                    QMessageBox.information(self, "成功", "已标记为非必要")
+                    self.update_video_selector()
+                    self.update_status_bar()
 
     def closeEvent(self, event):
         """关闭窗口前保存"""
