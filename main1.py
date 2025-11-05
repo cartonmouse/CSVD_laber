@@ -91,7 +91,9 @@ class MainWindow(QMainWindow):
         """设置快捷键"""
         from PyQt5.QtWidgets import QShortcut
         from PyQt5.QtGui import QKeySequence
+        from PyQt5.QtCore import Qt
 
+        # ========== 原有快捷键 ==========
         # Q键：设置开始时间
         shortcut_start = QShortcut(QKeySequence('Q'), self)
         shortcut_start.activated.connect(self.set_start_time_from_player)
@@ -100,9 +102,38 @@ class MainWindow(QMainWindow):
         shortcut_end = QShortcut(QKeySequence('E'), self)
         shortcut_end.activated.connect(self.set_end_time_from_player)
 
-        # S键：播放/暂停
-        shortcut_play = QShortcut(QKeySequence('S'), self)
-        shortcut_play.activated.connect(self.toggle_play_pause)
+        # S键：播放/暂停（保留旧习惯）
+        shortcut_play_s = QShortcut(QKeySequence('S'), self)
+        shortcut_play_s.activated.connect(self.toggle_play_pause)
+
+        # ========== 第一批新增快捷键 ==========
+        # Space：播放/暂停（需要检查焦点）
+        shortcut_play_space = QShortcut(QKeySequence(Qt.Key_Space), self)
+        shortcut_play_space.activated.connect(self.shortcut_play_pause)
+
+        # 左箭头：后退5秒（需要检查焦点）
+        shortcut_backward = QShortcut(QKeySequence(Qt.Key_Left), self)
+        shortcut_backward.activated.connect(self.shortcut_seek_backward)
+
+        # 右箭头：前进5秒（需要检查焦点）
+        shortcut_forward = QShortcut(QKeySequence(Qt.Key_Right), self)
+        shortcut_forward.activated.connect(self.shortcut_seek_forward)
+
+        # A键：添加片段（需要检查焦点）
+        shortcut_add = QShortcut(QKeySequence('A'), self)
+        shortcut_add.activated.connect(self.shortcut_add_segment)
+
+        # Ctrl+S：保存标注（全局可用）
+        shortcut_save = QShortcut(QKeySequence('Ctrl+S'), self)
+        shortcut_save.activated.connect(lambda: self.save_annotation(silent=False))
+
+        # Ctrl+左箭头：上一个视频（全局可用）
+        shortcut_prev_video = QShortcut(QKeySequence('Ctrl+Left'), self)
+        shortcut_prev_video.activated.connect(self.prev_video)
+
+        # Ctrl+右箭头：下一个视频（全局可用）
+        shortcut_next_video = QShortcut(QKeySequence('Ctrl+Right'), self)
+        shortcut_next_video.activated.connect(self.next_video)
 
     def set_start_time_from_player(self):
         """从当前播放位置设置开始时间"""
@@ -117,6 +148,78 @@ class MainWindow(QMainWindow):
     def toggle_play_pause(self):
         """切换播放/暂停状态"""
         self.video_player.toggle_play()
+
+    def is_text_input_focused(self) -> bool:
+        """
+        检查当前焦点是否在文本输入控件上
+        返回True表示在文本框/输入框，此时某些快捷键应该被禁用
+        """
+        from PyQt5.QtWidgets import QLineEdit, QTextEdit, QPlainTextEdit, QComboBox
+
+        focused_widget = QApplication.focusWidget()
+
+        if focused_widget is None:
+            return False
+
+        # 检查是否是文本输入类控件
+        return isinstance(focused_widget, (QLineEdit, QTextEdit, QPlainTextEdit)) or \
+            (isinstance(focused_widget, QComboBox) and focused_widget.isEditable())
+
+    def shortcut_play_pause(self):
+        """快捷键：播放/暂停（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.toggle_play_pause()
+
+    def shortcut_seek_backward(self):
+        """快捷键：后退5秒（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.seek_backward_5s()
+
+    def shortcut_seek_forward(self):
+        """快捷键：前进5秒（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.seek_forward_5s()
+
+    def shortcut_add_segment(self):
+        """快捷键：添加片段（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.trigger_add_segment()
+
+    def seek_backward_5s(self):
+        """后退5秒"""
+        current_time = self.video_player.get_current_time()
+        new_time = max(0, current_time - 5.0)
+        self.video_player.seek_to_time(new_time)
+
+    def seek_forward_5s(self):
+        """前进5秒"""
+        current_time = self.video_player.get_current_time()
+        duration = self.video_player.duration
+        new_time = min(duration, current_time + 5.0)
+        self.video_player.seek_to_time(new_time)
+
+    def trigger_add_segment(self):
+        """触发添加片段"""
+        # 调用标注面板的添加片段方法
+        self.annotation_panel.add_segment()
+
+    def seek_backward_5s(self):
+        """后退5秒"""
+        current_time = self.video_player.get_current_time()
+        new_time = max(0, current_time - 5.0)
+        self.video_player.seek_to_time(new_time)
+
+    def seek_forward_5s(self):
+        """前进5秒"""
+        current_time = self.video_player.get_current_time()
+        duration = self.video_player.duration
+        new_time = min(duration, current_time + 5.0)
+        self.video_player.seek_to_time(new_time)
+
+    def trigger_add_segment(self):
+        """触发添加片段（通过快捷键A）"""
+        # 模拟点击添加片段按钮
+        self.annotation_panel.add_segment()
 
     def create_toolbar(self) -> QGroupBox:
         """创建顶部工具栏"""

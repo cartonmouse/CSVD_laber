@@ -13,7 +13,7 @@ VIDEO_DIR = r"G:\huafeng_seg\崔丙强_PU_20005558"
 ANNOTATION_DIR = r"G:\huafeng_labeled\崔丙强_PU_20005558"
 
 # 导出的JSON文件路径
-EXPORT_JSON = r"G:\huafeng_labeled\崔丙强_PU_20005558"
+EXPORT_JSON = r"G:\huafeng_labeled\崔丙强_PU_20005558\all_annotations.json"
 
 
 # ==================== 预定义标签 ====================
