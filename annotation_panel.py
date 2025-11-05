@@ -493,3 +493,7 @@ class AnnotationPanel(QWidget):
         self.verb_combo.addItems(self.verb_list)
         if current_verb in self.verb_list:
             self.verb_combo.setCurrentText(current_verb)
+
+    def focus_description_input(self):
+        """将焦点设置到描述输入框"""
+        self.description_input.setFocus()

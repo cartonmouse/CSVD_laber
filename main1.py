@@ -135,6 +135,27 @@ class MainWindow(QMainWindow):
         shortcut_next_video = QShortcut(QKeySequence('Ctrl+Right'), self)
         shortcut_next_video.activated.connect(self.next_video)
 
+        # ========== 第二批新增快捷键 ==========
+        # Shift+左箭头：后退1秒（需要检查焦点）
+        shortcut_backward_1s = QShortcut(QKeySequence('Shift+Left'), self)
+        shortcut_backward_1s.activated.connect(self.shortcut_seek_backward_1s)
+
+        # Shift+右箭头：前进1秒（需要检查焦点）
+        shortcut_forward_1s = QShortcut(QKeySequence('Shift+Right'), self)
+        shortcut_forward_1s.activated.connect(self.shortcut_seek_forward_1s)
+
+        # D键：删除当前选中片段（需要检查焦点）
+        shortcut_delete = QShortcut(QKeySequence('D'), self)
+        shortcut_delete.activated.connect(self.shortcut_delete_segment)
+
+        # Ctrl+N：下一个未标注视频（全局可用）
+        shortcut_next_unannotated = QShortcut(QKeySequence('Ctrl+N'), self)
+        shortcut_next_unannotated.activated.connect(self.goto_next_unannotated)
+
+        # Tab：切换到描述框（需要检查焦点）
+        shortcut_focus_desc = QShortcut(QKeySequence(Qt.Key_Tab), self)
+        shortcut_focus_desc.activated.connect(self.shortcut_focus_description)
+
     def set_start_time_from_player(self):
         """从当前播放位置设置开始时间"""
         current_time = self.video_player.get_current_time()
@@ -220,6 +241,107 @@ class MainWindow(QMainWindow):
         """触发添加片段（通过快捷键A）"""
         # 模拟点击添加片段按钮
         self.annotation_panel.add_segment()
+
+    def shortcut_seek_backward_1s(self):
+        """快捷键：后退1秒（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.seek_backward_1s()
+
+    def shortcut_seek_forward_1s(self):
+        """快捷键：前进1秒（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.seek_forward_1s()
+
+    def shortcut_delete_segment(self):
+        """快捷键：删除片段（检查焦点）"""
+        if not self.is_text_input_focused():
+            self.delete_last_segment()
+
+    def shortcut_focus_description(self):
+        """快捷键：切换焦点到描述框"""
+        if not self.is_text_input_focused():
+            self.annotation_panel.focus_description_input()
+
+    def seek_backward_1s(self):
+        """后退1秒"""
+        current_time = self.video_player.get_current_time()
+        new_time = max(0, current_time - 1.0)
+        self.video_player.seek_to_time(new_time)
+
+    def seek_forward_1s(self):
+        """前进1秒"""
+        current_time = self.video_player.get_current_time()
+        duration = self.video_player.duration
+        new_time = min(duration, current_time + 1.0)
+        self.video_player.seek_to_time(new_time)
+
+    def delete_last_segment(self):
+        """删除最后一个片段（最新添加的）"""
+        if not self.current_annotation:
+            return
+
+        segments = self.current_annotation.get('segments', [])
+        if not segments:
+            QMessageBox.information(self, "提示", "没有可删除的片段")
+            return
+
+        # 删除最后一个片段
+        reply = QMessageBox.question(
+            self, "确认删除",
+            f"确定要删除最后一个片段吗？\n"
+            f"片段 {len(segments)}: {self.format_segment_time(segments[-1])}",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            segments.pop()
+            self.current_annotation['annotated'] = len(segments) > 0
+            self.annotation_panel.load_segments(segments)
+            self.save_annotation(silent=True)
+
+    def goto_next_unannotated(self):
+        """跳转到下一个未标注的视频"""
+        total_videos = self.data_manager.get_video_count()
+
+        if total_videos == 0:
+            return
+
+        # 从当前视频的下一个开始查找
+        start_index = (self.current_video_index + 1) % total_videos
+
+        for i in range(total_videos):
+            check_index = (start_index + i) % total_videos
+            video_path = self.data_manager.get_video_path(check_index)
+            status = self.data_manager.get_video_status(video_path)
+
+            if status == "未标注":
+                # 找到未标注视频，跳转
+                self.save_annotation(silent=True)
+                self.load_video(check_index)
+                return
+
+        # 没有找到未标注视频
+        QMessageBox.information(
+            self, "提示",
+            "所有视频都已标注或标记为非必要！"
+        )
+
+    def format_segment_time(self, segment: dict) -> str:
+        """格式化片段时间显示"""
+        from datetime import timedelta
+
+        start = segment['start_time']
+        end = segment['end_time']
+
+        def format_time(seconds):
+            td = timedelta(seconds=seconds)
+            total_seconds = int(td.total_seconds())
+            milliseconds = int((seconds - total_seconds) * 1000)
+            minutes = total_seconds // 60
+            secs = total_seconds % 60
+            return f"{minutes:02d}:{secs:02d}.{milliseconds:03d}"
+
+        return f"{format_time(start)} - {format_time(end)}"
 
     def create_toolbar(self) -> QGroupBox:
         """创建顶部工具栏"""
