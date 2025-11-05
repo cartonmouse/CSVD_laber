@@ -25,6 +25,8 @@ class MainWindow(QMainWindow):
         self.data_manager = DataManager()
         self.current_video_index = 0
         self.current_annotation = None
+        self.current_annotation = None
+        self.current_status_filter = "全部"  # 新增：当前状态过滤
 
         init_directories()
 
@@ -126,7 +128,18 @@ class MainWindow(QMainWindow):
         self.video_selector = QComboBox()
         self.video_selector.currentIndexChanged.connect(self.on_video_changed)
         self.update_video_selector()
-        layout.addWidget(self.video_selector, 2)  # 新增：拉伸因子
+        layout.addWidget(self.video_selector, 2)
+
+        # 新增：状态筛选
+        layout.addWidget(QLabel("｜ 状态:"))
+        self.status_filter = QComboBox()
+        self.status_filter.addItems(["全部", "未标注", "已标注", "非必要"])
+        self.status_filter.currentTextChanged.connect(self.on_status_filter_changed)
+        self.status_filter.setMaximumWidth(100)
+        layout.addWidget(self.status_filter)
+
+        # 导航按钮
+        self.prev_button = QPushButton("⏮")
 
         # 导航按钮
         self.prev_button = QPushButton("⏮")  # 修改：简化文字
@@ -202,32 +215,42 @@ class MainWindow(QMainWindow):
         return widget
 
     def update_video_selector(self):
-        """更新视频选择下拉框"""
+        """更新视频选择下拉框（支持状态筛选）"""
         self.video_selector.blockSignals(True)
         self.video_selector.clear()
+
+        status_filter = self.current_status_filter
 
         for i in range(self.data_manager.get_video_count()):
             video_path = self.data_manager.get_video_path(i)
             display_name = self.data_manager.get_video_display_name(video_path)
             status = self.data_manager.get_video_status(video_path)
 
+            # 状态过滤
+            if status_filter != "全部" and status != status_filter:
+                continue
+
             # 根据状态添加图标
             icon = {"未标注": "⭕", "已标注": "✅", "非必要": "⚪"}.get(status, "⭕")
             self.video_selector.addItem(f"{i + 1}. {icon} {display_name}")
 
-        self.video_selector.setCurrentIndex(self.current_video_index)
+        # 注意：筛选后不能简单用 setCurrentIndex
+        # 需要重新实现视频索引映射
+        self.video_selector.setCurrentIndex(0)
         self.video_selector.blockSignals(False)
 
     def update_status_bar(self):
         """更新状态栏"""
         total_videos = self.data_manager.get_video_count()
-        annotated_count = self.data_manager.get_annotated_count()
+        status_counts = self.data_manager.get_status_counts()
 
         self.status_label.setText(
-            f"总视频数: {total_videos} | 已标注: {annotated_count} | "
-            f"未标注: {total_videos - annotated_count}"
+            f"总: {total_videos} | "
+            f"✅已标注: {status_counts['已标注']} | "
+            f"⭕未标注: {status_counts['未标注']} | "
+            f"⚪非必要: {status_counts['非必要']}"
         )
-        self.progress_bar.setValue(annotated_count)
+        self.progress_bar.setValue(status_counts['已标注'])
 
     def load_first_video(self):
         """加载第一个视频"""
@@ -494,6 +517,11 @@ class MainWindow(QMainWindow):
                     self, "成功",
                     f"已切换到文件夹: {folder_name}\n视频数量: {self.data_manager.get_video_count()}"
                 )
+
+    def on_status_filter_changed(self, status: str):
+        """状态筛选改变"""
+        self.current_status_filter = status
+        self.update_video_selector()
 
     def closeEvent(self, event):
         """关闭窗口前保存"""
