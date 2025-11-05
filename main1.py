@@ -156,6 +156,18 @@ class MainWindow(QMainWindow):
         )
         layout.addWidget(self.export_button)
 
+        # 新增：切换文件夹按钮
+        self.switch_folder_button = QPushButton("📁 切换文件夹")
+        self.switch_folder_button.setMaximumWidth(100)
+        self.switch_folder_button.clicked.connect(self.switch_subfolder)
+        self.switch_folder_button.setStyleSheet(
+            "QPushButton { background-color: #9C27B0; color: white; padding: 5px; }"
+        )
+        layout.addWidget(self.switch_folder_button)
+
+        group.setLayout(layout)
+        return group
+
         group.setLayout(layout)
         return group
 
@@ -244,7 +256,12 @@ class MainWindow(QMainWindow):
 
         # 更新窗口标题
         display_name = self.data_manager.get_video_display_name(video_path)
-        self.setWindowTitle(f"建筑工地视频标注工具 - {display_name}")
+        current_subfolder = self.data_manager.get_current_subfolder()
+        if current_subfolder:
+            folder_name = self.data_manager.get_subfolder_display_name(current_subfolder)
+            self.setWindowTitle(f"建筑工地视频标注工具 - [{folder_name}] {display_name}")
+        else:
+            self.setWindowTitle(f"建筑工地视频标注工具 - {display_name}")
 
 
     def on_video_changed(self, index: int):
@@ -391,6 +408,88 @@ class MainWindow(QMainWindow):
                 return True
 
         return False
+
+    def switch_subfolder(self):
+        """
+        切换到另一个子文件夹
+        """
+        # 保存当前标注
+        self.save_annotation(silent=True)
+
+        subfolders = self.data_manager.get_subfolders()
+
+        if not subfolders:
+            QMessageBox.warning(
+                self, "错误",
+                f"未找到任何子文件夹"
+            )
+            return
+
+        # 获取当前子文件夹
+        current_subfolder = self.data_manager.get_current_subfolder()
+        current_index = 0
+        if current_subfolder and current_subfolder in subfolders:
+            current_index = subfolders.index(current_subfolder)
+
+        # 创建选择对话框
+        dialog = QDialog(self)
+        dialog.setWindowTitle("切换文件夹")
+        dialog.setMinimumWidth(600)
+        dialog.setMinimumHeight(400)
+
+        layout = QVBoxLayout()
+
+        # 说明文字
+        if current_subfolder:
+            current_name = self.data_manager.get_subfolder_display_name(current_subfolder)
+            info_label = QLabel(f"当前文件夹: {current_name}\n\n请选择要切换到的子文件夹:")
+        else:
+            info_label = QLabel("请选择要标注的子文件夹:")
+        layout.addWidget(info_label)
+
+        # 文件夹列表
+        list_widget = QListWidget()
+        for subfolder in subfolders:
+            display_name = self.data_manager.get_subfolder_display_name(subfolder)
+            video_count = self.data_manager.get_video_count_in_subfolder(subfolder)
+            list_widget.addItem(f"{display_name} ({video_count} 个视频)")
+
+        list_widget.setCurrentRow(current_index)  # 默认选中当前文件夹
+        layout.addWidget(list_widget)
+
+        # 按钮
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        dialog.setLayout(layout)
+
+        # 显示对话框
+        if dialog.exec_() == QDialog.Accepted:
+            selected_index = list_widget.currentRow()
+            if selected_index >= 0:
+                selected_subfolder = subfolders[selected_index]
+
+                # 如果选择的是当前文件夹，不做任何操作
+                if selected_subfolder == current_subfolder:
+                    QMessageBox.information(self, "提示", "您选择的是当前文件夹")
+                    return
+
+                # 切换到新文件夹
+                self.data_manager.load_videos_from_subfolder(selected_subfolder)
+
+                # 重新加载界面
+                self.current_video_index = 0
+                self.update_video_selector()
+                self.update_status_bar()
+                self.load_first_video()
+
+                folder_name = self.data_manager.get_subfolder_display_name(selected_subfolder)
+                QMessageBox.information(
+                    self, "成功",
+                    f"已切换到文件夹: {folder_name}\n视频数量: {self.data_manager.get_video_count()}"
+                )
 
     def closeEvent(self, event):
         """关闭窗口前保存"""
