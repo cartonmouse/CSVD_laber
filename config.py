@@ -7,7 +7,7 @@ from pathlib import Path
 
 # ==================== 路径配置 ====================
 # 视频文件夹路径（请根据实际情况修改）
-VIDEO_DIR = r"G:\huafeng_seg\崔丙强_PU_20005558\PU_20005558_0_20251016_151206"
+VIDEO_DIR = r"G:\huafeng_seg\崔丙强_PU_20005558"
 
 # 标注数据保存路径
 ANNOTATION_DIR = r"G:\huafeng_labeled\崔丙强_PU_20005558"

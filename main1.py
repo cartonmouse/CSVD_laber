@@ -5,9 +5,11 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QPushButton, QComboBox,
-                             QGroupBox, QMessageBox, QProgressBar, QSplitter)
+                             QGroupBox, QMessageBox, QProgressBar, QSplitter,
+                             QDialog, QListWidget, QDialogButtonBox)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, init_directories, EXPORT_JSON, VIDEO_DIR
 
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, init_directories, EXPORT_JSON
 from data_manager import DataManager
@@ -25,6 +27,11 @@ class MainWindow(QMainWindow):
         self.current_annotation = None
 
         init_directories()
+
+        # 新增：启动时选择子文件夹
+        if not self.select_subfolder_on_startup():
+            sys.exit()  # 如果用户取消选择，退出程序
+
         self.init_ui()
 
         # 新增：在加载视频前先加载标签缓存
@@ -329,6 +336,61 @@ class MainWindow(QMainWindow):
                 return cache.get('nouns', []), cache.get('verbs', [])
         except:
             return [], []
+
+    def select_subfolder_on_startup(self) -> bool:
+        """
+        启动时选择子文件夹
+        返回True表示选择成功，False表示用户取消
+        """
+        subfolders = self.data_manager.get_subfolders()
+
+        if not subfolders:
+            QMessageBox.critical(
+                None, "错误",
+                f"在以下目录未找到任何子文件夹:\n{VIDEO_DIR}\n\n"
+                f"请检查配置文件中的VIDEO_DIR路径"
+            )
+            return False
+
+        # 创建选择对话框
+        dialog = QDialog()
+        dialog.setWindowTitle("选择要标注的文件夹")
+        dialog.setMinimumWidth(600)
+        dialog.setMinimumHeight(400)
+
+        layout = QVBoxLayout()
+
+        # 说明文字
+        info_label = QLabel(f"请选择要标注的子文件夹:\n根目录: {VIDEO_DIR}")
+        layout.addWidget(info_label)
+
+        # 文件夹列表
+        list_widget = QListWidget()
+        for subfolder in subfolders:
+            display_name = self.data_manager.get_subfolder_display_name(subfolder)
+            video_count = self.data_manager.get_video_count_in_subfolder(subfolder)
+            list_widget.addItem(f"{display_name} ({video_count} 个视频)")
+
+        list_widget.setCurrentRow(0)  # 默认选中第一个
+        layout.addWidget(list_widget)
+
+        # 按钮
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        dialog.setLayout(layout)
+
+        # 显示对话框
+        if dialog.exec_() == QDialog.Accepted:
+            selected_index = list_widget.currentRow()
+            if selected_index >= 0:
+                selected_subfolder = subfolders[selected_index]
+                self.data_manager.load_videos_from_subfolder(selected_subfolder)
+                return True
+
+        return False
 
     def closeEvent(self, event):
         """关闭窗口前保存"""

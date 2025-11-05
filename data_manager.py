@@ -25,12 +25,21 @@ class DataManager:
     def __init__(self):
         self.video_list = []
         self.current_tags = DEFAULT_TAGS.copy()
+        self.current_tags = DEFAULT_TAGS.copy()
+        self.current_subfolder = None  # 新增：当前选择的子文件夹
+        self.load_video_list()
         self.load_video_list()
 
     def load_video_list(self) -> List[str]:
         """
         从VIDEO_DIR递归加载所有mp4视频文件
+        如果设置了current_subfolder，则只加载该子文件夹的视频
         """
+        if self.current_subfolder:
+            # 如果已选择子文件夹，只加载该文件夹
+            return self.load_videos_from_subfolder(self.current_subfolder)
+
+        # 否则加载所有视频（原有逻辑）
         video_dir = Path(VIDEO_DIR)
         if not video_dir.exists():
             self.video_list = []
@@ -167,6 +176,59 @@ class DataManager:
             self.current_tags.append(new_tag)
             return True
         return False
+
+    def get_subfolders(self) -> List[str]:
+        """
+        获取VIDEO_DIR下的所有子文件夹
+        返回子文件夹的绝对路径列表
+        """
+        video_dir = Path(VIDEO_DIR)
+        if not video_dir.exists():
+            return []
+
+        subfolders = []
+        for item in video_dir.iterdir():
+            if item.is_dir():
+                subfolders.append(str(item))
+
+        return sorted(subfolders)
+
+    def get_subfolder_display_name(self, subfolder_path: str) -> str:
+        """
+        获取子文件夹的显示名称（只显示文件夹名，不含完整路径）
+        """
+        return Path(subfolder_path).name
+
+    def load_videos_from_subfolder(self, subfolder_path: str) -> List[str]:
+        """
+        从指定子文件夹加载所有mp4视频文件
+        """
+        subfolder = Path(subfolder_path)
+        if not subfolder.exists():
+            self.video_list = []
+            return []
+
+        # 递归查找该子文件夹下的所有mp4文件
+        self.video_list = sorted([
+            str(f) for f in subfolder.rglob("*.mp4")
+        ])
+
+        self.current_subfolder = subfolder_path
+        return self.video_list
+
+    def get_current_subfolder(self) -> str:
+        """获取当前选择的子文件夹"""
+        return self.current_subfolder
+
+    def get_video_count_in_subfolder(self, subfolder_path: str) -> int:
+        """
+        获取指定子文件夹中的视频数量
+        """
+        subfolder = Path(subfolder_path)
+        if not subfolder.exists():
+            return 0
+
+        return len(list(subfolder.rglob("*.mp4")))
 
     def get_video_status(self, video_path: str) -> str:
         """
