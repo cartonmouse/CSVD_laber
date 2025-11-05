@@ -216,6 +216,8 @@ class DataManager:
         self.current_subfolder = subfolder_path
         return self.video_list
 
+
+
     def get_current_subfolder(self) -> str:
         """获取当前选择的子文件夹"""
         return self.current_subfolder

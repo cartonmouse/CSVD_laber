@@ -209,7 +209,11 @@ class MainWindow(QMainWindow):
         for i in range(self.data_manager.get_video_count()):
             video_path = self.data_manager.get_video_path(i)
             display_name = self.data_manager.get_video_display_name(video_path)
-            self.video_selector.addItem(f"{i + 1}. {display_name}")
+            status = self.data_manager.get_video_status(video_path)
+
+            # 根据状态添加图标
+            icon = {"未标注": "⭕", "已标注": "✅", "非必要": "⚪"}.get(status, "⭕")
+            self.video_selector.addItem(f"{i + 1}. {icon} {display_name}")
 
         self.video_selector.setCurrentIndex(self.current_video_index)
         self.video_selector.blockSignals(False)
