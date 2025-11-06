@@ -10,6 +10,21 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from typing import List, Dict
 
 
+# 自定义QComboBox，处理Tab键
+class TabHandlingComboBox(QComboBox):
+    """支持Tab键跳转的ComboBox"""
+    tab_pressed = pyqtSignal()  # Tab键按下信号
+
+    def keyPressEvent(self, event):
+        """重写键盘事件处理"""
+        if event.key() == Qt.Key_Tab:
+            # 发出Tab键信号
+            self.tab_pressed.emit()
+            event.accept()  # 接受事件，不让它继续传播
+        else:
+            # 其他按键正常处理
+            super().keyPressEvent(event)
+
 class AnnotationPanel(QWidget):
     """标注面板组件"""
 
@@ -31,10 +46,11 @@ class AnnotationPanel(QWidget):
         self.current_video_duration = 0.0
         self.segments = []
 
-
         self.noun_list = []
         self.verb_list = []
         self.init_ui()
+
+
 
     def init_ui(self):
         """初始化界面"""
@@ -84,8 +100,9 @@ class AnnotationPanel(QWidget):
         # 动词输入（可下拉选择或自定义）
         verb_layout = QHBoxLayout()
         verb_layout.addWidget(QLabel("动词:"))
-        self.verb_combo = QComboBox()
+        self.verb_combo = TabHandlingComboBox()  # ← 使用自定义类
         self.verb_combo.setEditable(True)
+        self.verb_combo.tab_pressed.connect(self.on_verb_tab)  # ← 连接信号
         self.verb_combo.setPlaceholderText("选择或输入动词")
         verb_layout.addWidget(self.verb_combo, 3)
 
@@ -99,8 +116,9 @@ class AnnotationPanel(QWidget):
         # 名词输入（可下拉选择或自定义）
         noun_layout = QHBoxLayout()
         noun_layout.addWidget(QLabel("名词:"))
-        self.noun_combo = QComboBox()
+        self.noun_combo = TabHandlingComboBox()  # ← 使用自定义类
         self.noun_combo.setEditable(True)
+        self.noun_combo.tab_pressed.connect(self.on_noun_tab)  # ← 连接信号
         self.noun_combo.setPlaceholderText("选择或输入名词")
         noun_layout.addWidget(self.noun_combo, 3)
 
@@ -132,6 +150,13 @@ class AnnotationPanel(QWidget):
         button_layout.addWidget(self.add_segment_button)
 
         layout.addLayout(button_layout)
+
+        # 设置Tab键顺序：开始时间 → 结束时间 → 描述 → 动词 → 名词
+        self.setTabOrder(self.start_time_input, self.end_time_input)
+        self.setTabOrder(self.end_time_input, self.description_input)
+        self.setTabOrder(self.description_input, self.verb_combo)
+        self.setTabOrder(self.verb_combo, self.noun_combo)
+        self.setTabOrder(self.noun_combo, self.add_segment_button)
 
         group.setLayout(layout)
         return group
@@ -493,9 +518,41 @@ class AnnotationPanel(QWidget):
         if current_verb in self.verb_list:
             self.verb_combo.setCurrentText(current_verb)
 
+
+
     def focus_description_input(self):
         """将焦点设置到描述输入框"""
         self.description_input.setFocus()
+
+    def focus_description_input(self):
+        """将焦点设置到描述输入框"""
+        self.description_input.setFocus()
+
+    def focus_description_input(self):
+        """将焦点设置到描述输入框"""
+        self.description_input.setFocus()
+
+    def focus_verb_input(self):
+        """将焦点设置到动词输入框"""
+        self.verb_combo.setFocus()
+        # 可选：自动弹出下拉列表
+        self.verb_combo.showPopup()
+
+    def focus_noun_input(self):
+        """将焦点设置到名词输入框"""
+        self.noun_combo.setFocus()
+        # 可选：自动弹出下拉列表
+        self.noun_combo.showPopup()
+
+    def on_verb_tab(self):
+        """动词框按下Tab键，跳转到名词框"""
+        self.noun_combo.setFocus()
+        # 可选：自动弹出下拉列表
+        # self.noun_combo.showPopup()
+
+    def on_noun_tab(self):
+        """名词框按下Tab键，跳转到添加按钮"""
+        self.add_segment_button.setFocus()
 
     def quick_select_tag(self, num: int):
         """

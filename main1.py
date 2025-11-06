@@ -123,6 +123,10 @@ class MainWindow(QMainWindow):
         shortcut_add = QShortcut(QKeySequence('A'), self)
         shortcut_add.activated.connect(self.shortcut_add_segment)
 
+        # F2：添加片段（全局可用，主要快捷键）
+        shortcut_add_f2 = QShortcut(QKeySequence(Qt.Key_F2), self)
+        shortcut_add_f2.activated.connect(self.trigger_add_segment)
+
         # Ctrl+S：保存标注（全局可用）
         shortcut_save = QShortcut(QKeySequence('Ctrl+S'), self)
         shortcut_save.activated.connect(lambda: self.save_annotation(silent=False))
@@ -148,8 +152,8 @@ class MainWindow(QMainWindow):
         shortcut_delete = QShortcut(QKeySequence('D'), self)
         shortcut_delete.activated.connect(self.shortcut_delete_segment)
 
-        # Ctrl+N：下一个未标注视频（全局可用）
-        shortcut_next_unannotated = QShortcut(QKeySequence('Ctrl+N'), self)
+        # Ctrl+V：下一个未标注视频（全局可用）
+        shortcut_next_unannotated = QShortcut(QKeySequence('Ctrl+V'), self)
         shortcut_next_unannotated.activated.connect(self.goto_next_unannotated)
 
         # Tab：切换到描述框（需要检查焦点）
@@ -163,9 +167,19 @@ class MainWindow(QMainWindow):
             # 使用lambda的默认参数来捕获i的值
             shortcut_num.activated.connect(lambda num=i: self.shortcut_quick_select(num))
 
-        # Ctrl+M：标记为非必要（全局可用）
-        shortcut_mark = QShortcut(QKeySequence('Ctrl+M'), self)
+
+
+        # Ctrl+C：标记为非必要（全局可用）
+        shortcut_mark = QShortcut(QKeySequence('Ctrl+C'), self)
         shortcut_mark.activated.connect(self.mark_as_unnecessary)
+
+        # 新增：F3 跳转到动词输入框
+        shortcut_f3 = QShortcut(QKeySequence(Qt.Key_F3), self)
+        shortcut_f3.activated.connect(self.focus_verb_input)
+
+        # 新增：F4 跳转到名词输入框
+        shortcut_f4 = QShortcut(QKeySequence(Qt.Key_F4), self)
+        shortcut_f4.activated.connect(self.focus_noun_input)
 
         # F1：打开标签管理器（全局可用）
         shortcut_tag_manager = QShortcut(QKeySequence(Qt.Key_F1), self)
@@ -288,6 +302,19 @@ class MainWindow(QMainWindow):
         """快捷键：切换焦点到描述框"""
         if not self.is_text_input_focused():
             self.annotation_panel.focus_description_input()
+
+    def shortcut_focus_description(self):
+        """快捷键：切换焦点到描述框"""
+        if not self.is_text_input_focused():
+            self.annotation_panel.focus_description_input()
+
+    def focus_verb_input(self):
+        """快捷键F3：跳转到动词输入框"""
+        self.annotation_panel.focus_verb_input()
+
+    def focus_noun_input(self):
+        """快捷键F4：跳转到名词输入框"""
+        self.annotation_panel.focus_noun_input()
 
     def seek_backward_1s(self):
         """后退1秒"""
@@ -477,34 +504,36 @@ class MainWindow(QMainWindow):
     def create_status_bar(self) -> QWidget:
         """创建底部状态栏"""
         widget = QWidget()
-        widget.setMaximumHeight(40)  # 新增：限制高度
+        widget.setMaximumHeight(40)
 
         layout = QHBoxLayout()
-        layout.setContentsMargins(5, 5, 5, 5)  # 新增：减小边距
+        layout.setContentsMargins(5, 5, 5, 5)
 
         # 统计信息
         total_videos = self.data_manager.get_video_count()
-        annotated_count = self.data_manager.get_annotated_count()
+        status_counts = self.data_manager.get_status_counts()
 
         self.status_label = QLabel(
-            f"总: {total_videos} | 已标注: {annotated_count} | "  # 修改：简化文字
-            f"未标注: {total_videos - annotated_count}"
+            f"总: {total_videos} | "
+            f"✅已标注: {status_counts['已标注']} | "
+            f"⭕未标注: {status_counts['未标注']} | "
+            f"⚪非必要: {status_counts['非必要']}"
         )
-        self.status_label.setFont(QFont("Arial", 9))  # 修改：字体改小
+        self.status_label.setFont(QFont("Arial", 9))
         layout.addWidget(self.status_label)
 
         # 进度条
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximum(total_videos)
-        self.progress_bar.setValue(annotated_count)
-        self.progress_bar.setMaximumHeight(20)  # 新增：限制高度
-        self.progress_bar.setMaximumWidth(200)  # 新增：限制宽度
+        self.progress_bar.setValue(status_counts['已标注'])
+        self.progress_bar.setMaximumHeight(20)
+        self.progress_bar.setMaximumWidth(200)
         layout.addWidget(self.progress_bar)
 
         # 添加快捷键提示
         layout.addStretch()
         shortcut_hint = QLabel(
-            "快捷键: Space播放 Q开始 E结束 A添加 D删除 ←→移动 Ctrl+N下一个未标注"
+            "快捷键: Space播放 Q开始 E结束 F2添加 F3动词 F4名词 Ctrl+V下一个 Ctrl+C非必要"
         )
         shortcut_hint.setFont(QFont("Arial", 8))
         shortcut_hint.setStyleSheet("color: #666;")
@@ -649,6 +678,15 @@ class MainWindow(QMainWindow):
             return
 
         video_path = self.data_manager.get_video_path(self.current_video_index)
+
+        # 确保status字段存在
+        if 'status' not in self.current_annotation:
+            # 如果没有status字段，根据片段情况自动设置
+            if self.current_annotation.get('segments'):
+                self.current_annotation['status'] = '已标注'
+            else:
+                self.current_annotation['status'] = '未标注'
+
         if self.data_manager.save_annotation(video_path, self.current_annotation):
             if not silent:
                 QMessageBox.information(self, "成功", "标注已保存")
@@ -857,6 +895,8 @@ class MainWindow(QMainWindow):
             )
             if reply == QMessageBox.Yes:
                 if self.data_manager.set_video_status(video_path, "未标注"):
+                    # 重要：更新当前标注数据中的status
+                    self.current_annotation['status'] = "未标注"  # 新增这行
                     QMessageBox.information(self, "成功", "已恢复为未标注")
                     self.update_video_selector()
                     self.update_status_bar()
@@ -869,6 +909,8 @@ class MainWindow(QMainWindow):
             )
             if reply == QMessageBox.Yes:
                 if self.data_manager.set_video_status(video_path, "非必要"):
+                    # 重要：更新当前标注数据中的status
+                    self.current_annotation['status'] = "非必要"  # 新增这行
                     QMessageBox.information(self, "成功", "已标记为非必要")
                     self.update_video_selector()
                     self.update_status_bar()

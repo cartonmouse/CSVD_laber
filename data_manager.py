@@ -138,14 +138,18 @@ class DataManager:
             print(f"Error saving annotation: {e}")
             return False
 
-    def get_annotated_count(self) -> int:
-        """统计已标注的视频数量"""
-        count = 0
-        for video_path in self.video_list:
-            annotation = self.load_annotation(video_path)
-            if annotation.get('annotated', False):
-                count += 1
-        return count
+    def set_video_status(self, video_path: str, status: str) -> bool:
+        """
+        设置视频状态
+        status: "未标注" / "已标注" / "非必要"
+        """
+        if status not in ["未标注", "已标注", "非必要"]:
+            return False
+
+        annotation = self.load_annotation(video_path)
+        annotation['status'] = status
+        # 重要：立即保存到文件
+        return self.save_annotation(video_path, annotation)
 
     def export_all_annotations(self) -> bool:
         """
@@ -272,6 +276,7 @@ class DataManager:
             counts[status] = counts.get(status, 0) + 1
 
         return counts
+
 
     def get_tags(self) -> List[str]:
         """获取当前所有标签"""
