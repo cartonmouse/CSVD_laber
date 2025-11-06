@@ -397,6 +397,45 @@ class MainWindow(QMainWindow):
 
         return f"{format_time(start)} - {format_time(end)}"
 
+    def get_subfolder_status(self, subfolder_path: str) -> tuple:
+        """
+        获取子文件夹的标注状态
+        返回: (状态图标, 状态文字, 已标注数, 未标注数, 非必要数)
+        """
+        # 获取该文件夹下的所有视频
+        from pathlib import Path
+        subfolder = Path(subfolder_path)
+        videos = list(subfolder.rglob("*.mp4"))
+
+        if not videos:
+            return ("⚪", "空", 0, 0, 0)
+
+        # 统计各状态数量
+        annotated = 0
+        unannotated = 0
+        unnecessary = 0
+
+        for video in videos:
+            status = self.data_manager.get_video_status(str(video))
+            if status == "已标注":
+                annotated += 1
+            elif status == "非必要":
+                unnecessary += 1
+            else:
+                unannotated += 1
+
+        # 判断文件夹状态
+        total = len(videos)
+        if annotated + unnecessary == total:
+            # 全部完成
+            return ("✅", "已完成", annotated, unannotated, unnecessary)
+        elif annotated == 0 and unnecessary == 0:
+            # 未开始
+            return ("⭕", "未开始", annotated, unannotated, unnecessary)
+        else:
+            # 进行中
+            return ("🔄", "进行中", annotated, unannotated, unnecessary)
+
     def shortcut_quick_select(self, num: int):
         """快捷键：快速选择第num个标签（检查焦点）"""
         if not self.is_text_input_focused():
@@ -758,9 +797,23 @@ class MainWindow(QMainWindow):
         for subfolder in subfolders:
             display_name = self.data_manager.get_subfolder_display_name(subfolder)
             video_count = self.data_manager.get_video_count_in_subfolder(subfolder)
-            list_widget.addItem(f"{display_name} ({video_count} 个视频)")
 
-        list_widget.setCurrentRow(0)  # 默认选中第一个
+            # 获取状态信息
+            icon, status_text, annotated, unannotated, unnecessary = self.get_subfolder_status(subfolder)
+
+            # 格式化显示文本
+            item_text = f"{icon} {display_name} ({video_count}个 | ✅{annotated} ⭕{unannotated} ⚪{unnecessary}) - {status_text}"
+            list_widget.addItem(item_text)
+
+        # 默认选中第一个未完成的文件夹
+        default_index = 0
+        for idx, subfolder in enumerate(subfolders):
+            icon, status_text, _, _, _ = self.get_subfolder_status(subfolder)
+            if status_text != "已完成":
+                default_index = idx
+                break
+
+        list_widget.setCurrentRow(default_index)
         layout.addWidget(list_widget)
 
         # 按钮
@@ -824,7 +877,13 @@ class MainWindow(QMainWindow):
         for subfolder in subfolders:
             display_name = self.data_manager.get_subfolder_display_name(subfolder)
             video_count = self.data_manager.get_video_count_in_subfolder(subfolder)
-            list_widget.addItem(f"{display_name} ({video_count} 个视频)")
+
+            # 获取状态信息
+            icon, status_text, annotated, unannotated, unnecessary = self.get_subfolder_status(subfolder)
+
+            # 格式化显示文本
+            item_text = f"{icon} {display_name} ({video_count}个 | ✅{annotated} ⭕{unannotated} ⚪{unnecessary}) - {status_text}"
+            list_widget.addItem(item_text)
 
         list_widget.setCurrentRow(current_index)  # 默认选中当前文件夹
         layout.addWidget(list_widget)
